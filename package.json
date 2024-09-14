@@ -1,0 +1,25 @@
+{
+  "name": "duyphuongnode44",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuyPhuongkhtn/DuyPhuongNode44.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DuyPhuongkhtn/DuyPhuongNode44/issues"
+  },
+  "homepage": "https://github.com/DuyPhuongkhtn/DuyPhuongNode44#readme",
+  "dependencies": {
+    "express": "^4.21.0",
+    "nodemon": "^3.1.4"
+  }
+}
