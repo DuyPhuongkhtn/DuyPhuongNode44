@@ -1,51 +1,50 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class users extends Model {
+export default class video_comment extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    user_id: {
+    comment_id: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    full_name: {
-      type: DataTypes.STRING(255),
-      allowNull: true
-    },
-    email: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      unique: "email"
-    },
-    avatar: {
-      type: DataTypes.STRING(255),
-      allowNull: true
-    },
-    pass_word: {
-      type: DataTypes.STRING(255),
-      allowNull: true
-    },
-    face_app_id: {
-      type: DataTypes.STRING(255),
-      allowNull: true
-    },
-    role_id: {
+    user_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'role',
-        key: 'role_id'
+        model: 'users',
+        key: 'user_id'
       }
     },
-    refresh_token: {
+    video_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'video',
+        key: 'video_id'
+      }
+    },
+    date_create: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    content: {
       type: DataTypes.TEXT,
+      allowNull: true
+    },
+    reply_list: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    timestamp: {
+      type: DataTypes.DATE,
       allowNull: true
     }
   }, {
     sequelize,
-    tableName: 'users',
+    tableName: 'video_comment',
     timestamps: false,
     indexes: [
       {
@@ -53,22 +52,21 @@ export default class users extends Model {
         unique: true,
         using: "BTREE",
         fields: [
+          { name: "comment_id" },
+        ]
+      },
+      {
+        name: "user_id",
+        using: "BTREE",
+        fields: [
           { name: "user_id" },
         ]
       },
       {
-        name: "email",
-        unique: true,
+        name: "video_id",
         using: "BTREE",
         fields: [
-          { name: "email" },
-        ]
-      },
-      {
-        name: "role_id",
-        using: "BTREE",
-        fields: [
-          { name: "role_id" },
+          { name: "video_id" },
         ]
       },
     ]
