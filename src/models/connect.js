@@ -1,7 +1,7 @@
 import {Sequelize} from 'sequelize';
 
 const sequelize = new Sequelize(
-    'youtube_mini', //têm database
+    'youtube_mini', //tên database
     'root', // ten user
     '123456', //password user
     {
