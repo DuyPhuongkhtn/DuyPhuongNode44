@@ -56,9 +56,27 @@ const getVideoType = async (req, res) => {
     }
 }
 
+const getListVideoType = async (req, res) => {
+    try{
+        let {typeId} = req.params;
+        let data = await model.video.findAll({
+            where: {
+                type_id: typeId
+            }
+        })
+        if (data.length == 0) {
+            return res.status(400).json({message: "No data"})
+        }
+        return res.status(200).json(data);
+    } catch(error) {
+        return res.status(500).json({message: "error"});
+    }
+}
+
 export {
     getVideos,
     getType,
     getVideoType,
     getVideoPage,
+    getListVideoType,
 }
