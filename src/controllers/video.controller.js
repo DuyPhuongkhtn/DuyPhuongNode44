@@ -18,6 +18,7 @@ const getType = async (req, res) => {
         let data = await model.video_type.findAll();
         return res.status(200).json(data);
     } catch(error) {
+        console.log(error)
         return res.status(500).json({message: "error"});
     }
 }
@@ -35,6 +36,7 @@ const getListVideoType = async (req, res) => {
         }
         return res.status(200).json(data);
     } catch(error) {
+        console.log(error)
         return res.status(500).json({message: "error"});
     }
 }
