@@ -2,7 +2,8 @@ import transporter from "../config/transporter.js";
 import sequelize from "../models/connect.js";
 import initModels from "../models/init-models.js";
 import bcrypt from 'bcrypt';
-import { createToken } from "../config/jwt.js";
+import { createToken, createTokenRef } from "../config/jwt.js";
+import jwt from 'jsonwebtoken';
 const model = initModels(sequelize);
 const register = async (req, res, next) => {
    try {
@@ -55,7 +56,7 @@ const register = async (req, res, next) => {
             return res.status(500).send('Error sending email');
          }
          console.log('Email sent:', info.response);
-         res.status(200).json({
+         return res.status(200).json({
             message: "Đăng ký thành công",
             data: userNew,
          });
@@ -74,6 +75,8 @@ const register = async (req, res, next) => {
 const login = async (req, res) => {
    try {
       let { email, pass_word } = req.body;
+      const dataTest = req.cookies.refreshToken;
+      console.log("dataTest: ", dataTest)
 
       let checkEmail = await model.users.findOne({
          where: {
@@ -85,7 +88,8 @@ const login = async (req, res) => {
       }
       if (bcrypt.compareSync(pass_word, checkEmail.pass_word)) {
          let token = createToken({ userId: checkEmail.user_id, fullName: checkEmail.full_name })
-         console.log(token)
+         let refreshToken = createTokenRef({userId: checkEmail.user_id})
+         await model.users.update({refresh_token: refreshToken}, {where: {user_id: checkEmail.user_id}})
 
          return res.status(200).json({ message: "Success", assessToken: token })
       } else {
@@ -125,10 +129,33 @@ const loginFacebook = async (req, res) => {
          checkUser = await model.users.create(newData)
       }
 
-      return res.status(200).json({message: "Login successfull"});
+      let token = createToken({userId: checkUser.user_id});
+      let refreshToken = createTokenRef({userId: checkUser.user_id});
+      await model.users.update({refresh_token: refreshToken}, {where: { user_id: checkUser.user_id}});
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,      // Cookie không thể truy cập được từ JavaScript để bảo mật
+        secure: false,        // Bắt buộc phải chạy trên HTTPS
+        sameSite: 'Lax',    // Đảm bảo cookie được gửi trong yêu cầu chéo miền
+        maxAge: 7 * 24 * 60 * 60 * 1000, // Thời gian tồn tại là 7 ngày
+        path: '/'
+      });
+
+      res.status(200).json({message: "Login successfull", data: token});
    } catch (error) {
       res.status(500).json({ message: "error" });
    }
 }
 
-export { register, login, loginFacebook };
+const refreshtoken = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) return res.status(401);
+    jwt.verify(refreshToken, "NODE_44_REFRESH", (err, user) => {
+        if (err) return res.status(403);
+
+        const token = createToken({data: user.userId})
+        return res.status(200).json({message: "Success", data: token});
+    })
+}
+
+export { register, login, loginFacebook, refreshtoken };
