@@ -3,7 +3,7 @@ import initModels from "../models/init-models.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import transporter from "../config/transporter.js";
-import { createToken } from "../config/jwt.js";
+import { createRefToken, createToken } from "../config/jwt.js";
 
 const model = initModels(sequelize);
 const register = async (req, res, next) => {
@@ -100,6 +100,22 @@ const login = async (req, res) => {
         // param 2: key để tạo token
         // param 3: setting lifetime của token và thuật toán để tạo token
         let accessToken = createToken({userId: user.user_id})
+        // create refresh token và lưu vào database
+        let refreshToken = createRefToken({userId: user.user_id});
+        await model.users.update({
+            refresh_token: refreshToken
+        }, {
+            where: {user_id: user.user_id}
+        });
+
+        // lưu refresh token vào cookie
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true, // Cookie không thể truy cập từ javascript
+            secure: false, // để chạy dưới localhost
+            sameSite: 'Lax', // để đảm bảo cookie được gửi trong các domain khác nhau
+            maxAge: 7 * 24 * 60 * 60 * 1000 //thời gian tồn tại cookie trong browser
+        })
+
         return res.status(200).json({
             message: "Login successfully",
             data: accessToken
@@ -139,4 +155,26 @@ const loginFacebook = async (req, res) => {
     }
 }
 
-export { register, login, loginFacebook };
+const extendToken = async (req, res) => {
+    // lấy refresh token từ cookie request
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        return res.status(401)
+    }
+
+    const checkRefToken = await model.users.findOne({
+        where: {
+            refresh_token: refreshToken
+        }
+    });
+
+    if (!checkRefToken) {
+        return res.status(401);
+    }
+
+    const newToken = createToken({userId: checkRefToken.user_id})
+    return res.status(200).json({message: "Success", data: newToken});
+}
+
+export { register, login, loginFacebook, extendToken };

@@ -4,15 +4,21 @@ import pool from './db.js';
 import { OK, INTERNAL_SERVER } from './const.js';
 import rootRoutes from './src/routes/root.router.js';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 // B2: tạo object express
 const app = express();
 
+// thêm middleware cors để FE có thể call API tới BE
+app.use(cors({
+    origin: "http://localhost:3000", // cấp quyền cho FE
+    credentials: true // cho phép FE lấy cookie và lưu vào cookie browser
+}));
 // thêm middleware để đọc data json
 app.use(express.json());
 
-// thêm middleware cors để FE có thể call API tới BE
-app.use(cors());
+// thêm middleware để đọc cookie từ request
+app.use(cookieParser());
 
 // import rootRoutes
 app.use(rootRoutes);
