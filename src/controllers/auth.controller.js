@@ -4,6 +4,12 @@ import initModels from "../models/init-models.js";
 import bcrypt from 'bcrypt';
 import { createToken, createTokenRef } from "../config/jwt.js";
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+
+// đọc private key và public key
+const privateKey = fs.readFileSync('private.key', 'utf-8')
+const publicKey = fs.readFileSync('public.key', 'utf-8');
+
 const model = initModels(sequelize);
 const register = async (req, res, next) => {
    try {
@@ -75,8 +81,8 @@ const register = async (req, res, next) => {
 const login = async (req, res) => {
    try {
       let { email, pass_word } = req.body;
-      const dataTest = req.cookies.refreshToken;
-      console.log("dataTest: ", dataTest)
+    //   const dataTest = req.cookies.refreshToken;
+    //   console.log("dataTest: ", dataTest)
 
       let checkEmail = await model.users.findOne({
          where: {
@@ -90,8 +96,14 @@ const login = async (req, res) => {
          let token = createToken({ userId: checkEmail.user_id, fullName: checkEmail.full_name })
          let refreshToken = createTokenRef({userId: checkEmail.user_id})
          await model.users.update({refresh_token: refreshToken}, {where: {user_id: checkEmail.user_id}})
-
-         return res.status(200).json({ message: "Success", assessToken: token })
+         res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,      // Cookie không thể truy cập được từ JavaScript để bảo mật
+            secure: false,        // Bắt buộc phải chạy trên HTTPS
+            sameSite: 'Lax',    // Đảm bảo cookie được gửi trong yêu cầu chéo miền
+            maxAge: 7 * 24 * 60 * 60 * 1000, // Thời gian tồn tại là 7 ngày
+            path: '/' // đảm bảo cookie có sẵn trên môi route
+          });
+         return res.status(200).json({ message: "Success", data: token })
       } else {
          return res.status(400).json({ message: "Pass is wrong" })
       }
@@ -140,22 +152,60 @@ const loginFacebook = async (req, res) => {
         path: '/'
       });
 
-      res.status(200).json({message: "Login successfull", data: token});
+      return res.status(200).json({message: "Login successfull", data: token});
    } catch (error) {
-      res.status(500).json({ message: "error" });
+      return res.status(500).json({ message: "error" });
    }
 }
 
-const refreshtoken = async (req, res) => {
+const extendToken = async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) return res.status(401);
+    const checkRefToken = await model.users.findOne({
+        where: {
+            refresh_token: refreshToken
+        }
+    })
+    console.log("get data: ", checkRefToken)
+    if (!checkRefToken) {
+        return res.status(401);
+    }
     jwt.verify(refreshToken, "NODE_44_REFRESH", (err, user) => {
         if (err) return res.status(403);
 
-        const token = createToken({data: user.userId})
+        const token = createToken({userId: user.data.userId})
+        console.log("ok: ", token)
         return res.status(200).json({message: "Success", data: token});
     })
 }
 
-export { register, login, loginFacebook, refreshtoken };
+const loginAsyncKey = async (req, res) => {
+    const {email, pass_word} = req.body;
+
+    const payload = {email};
+
+    const token = jwt.sign(payload, privateKey, {
+        algorithm: 'RS256',
+        expiresIn: '1h'
+    });
+
+    return res.status(200).json({token});
+}
+
+const verifyAsyncKey = async (req, res) => {
+    const token = req.headers['token'];
+    if (!token) {
+        return res.status(401).json({message: "Token not found"});
+    }
+
+    jwt.verify(token, publicKey, (err, decoded) => {
+        if(err) {
+            return res.status(401).json({message: "Invalid token"});
+        }
+
+        return res.status(200).json({message: "OK", data: decoded});
+    })
+}
+
+export { register, login, loginFacebook, extendToken, loginAsyncKey, verifyAsyncKey };

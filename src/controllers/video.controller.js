@@ -35,6 +35,7 @@ const getVideoPage = async (req, res) => {
 
 const getType = async (req, res) => {
     try {
+        res.cookie('refreshToken', "ahihi");
         let data = await model.video_type.findAll()
         return res.status(200).json(data);
     } catch (error) {

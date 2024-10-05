@@ -8,11 +8,11 @@ import cookieParser from 'cookie-parser';
 
 // B2: tạo object express
 const app = express();
+
 app.use(cors({
     origin: 'http://localhost:3000',
     credentials: true
 }))
-
 // thêm middleware để đọc data json
 app.use(express.json());
 app.use(cookieParser());

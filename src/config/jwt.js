@@ -8,7 +8,7 @@ export const createToken = (data) => {
     // tham số 1 payload: string, buffer, object
     // tham số 2 signalture (secret key)
     // tham số 3 header
-    return jwt.sign({ data: data }, process.env.JWT_KEY, { algorithm: "HS256", expiresIn: "5m" })
+    return jwt.sign({ data: data }, process.env.JWT_KEY, { algorithm: "HS256", expiresIn: "15s" })
 }
 
 export const verifyToken = (token) => {
@@ -47,7 +47,7 @@ export const middleWareToken = (req, res, next) => {
 
     let { token } = req.headers;
 
-    console.log("token: ", req.cookies)
+    console.log("token: ", token)
 
     let checkToken = verifyToken(token)
     console.log("checkToken: ", checkToken)
