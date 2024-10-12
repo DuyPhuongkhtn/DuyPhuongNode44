@@ -6,7 +6,7 @@ const model = initModels(sequelize);
 
 const getListVideo = async(req, res) => {
     try{
-        let data = await model.video.findAll();
+        let data = await model.video.findAll(); // return Promise
         return res.status(200).json(data);
     } catch(error) {
         console.log(error)
