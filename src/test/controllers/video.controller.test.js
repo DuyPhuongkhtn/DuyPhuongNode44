@@ -1,6 +1,6 @@
-import initModels from "./../models/init-models.js"
-import sequelize from "./../models/connect.js";
-import {getListVideo} from './../controllers/video.controller.js'
+import initModels from "../../../src/models/init-models.js"
+import sequelize from "../../../src/models/connect.js";
+import {getListVideo} from '../../../src/controllers/video.controller.js'
 import sinon from 'sinon';
 import { afterEach } from "mocha";
 import { expect } from "chai";
@@ -50,5 +50,8 @@ describe('getVideos', () => {
 
         // kiểm tra res.status được gọi với 200
         expect(res.status.calledWith(200)).to.be.true;
+        expect(res.json.calledOnce).to.be.true; // Đảm bảo res.json được gọi một lần
+        expect(res.json.calledWith(videos)).to.be.true; // Đảm bảo res.json được gọi với dữ liệu videos
     })
+
 })

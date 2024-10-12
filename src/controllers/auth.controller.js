@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import transporter from "../config/transporter.js";
 import { createRefToken, createRefTokenAsyncKey, createToken, createTokenAsyncKey, verifyTokenAsyncKey } from "../config/jwt.js";
+import crypto from 'crypto';
 
 const model = initModels(sequelize);
 const register = async (req, res, next) => {
@@ -54,6 +55,7 @@ const register = async (req, res, next) => {
         //   gửi email
         transporter.sendMail(mailOption, (err, info) => {
             if(err) {
+                console.log(err)
                 return res.status(500).json({message: "Sending email error"});
             }
             return res.status(200).json({
@@ -244,4 +246,101 @@ const verifyAccessTokenAsyncKey = (req, res) => {
     return res.status(200).json({checkToken});
 }
 
-export { register, login, loginFacebook, extendToken, loginAsyncKey, verifyAccessTokenAsyncKey };
+const forgetCheckEmail = async (req, res) => {
+    let { email } = req.body;
+
+    let checkEmail = await model.users.findOne({
+        where: {
+            email
+        }
+    })
+
+    if (checkEmail) {
+
+        // tạo code
+        let randomCode = crypto.randomBytes(5).toString('hex')
+        let newCode = {
+            code: randomCode,
+            expired: new Date(new Date().getTime() + 10 * 60000)
+        }
+
+        await model.code.create(newCode);
+
+        // gửi mail
+        //   cấu hình info email
+        const mailOption = {
+            from: process.env.MAIL_USER,
+            to: email,
+            subject: "Mã xác thực",
+            text: `Hello ${randomCode}`
+        }
+
+        //   gửi email
+        transporter.sendMail(mailOption, (err, info) => {
+            if(err) {
+                console.log(err)
+                return res.status(500).json({message: "Sending email error"});
+            }
+            return res.status(200).json({
+                message: "Gửi code thành công"
+            });
+        })
+
+
+
+
+    } else {
+        return res.status(400).json({message: "Email không đúng"})
+    }
+
+}
+
+const changePass = async (req, res) => {
+    try {
+        let {code, newPass, email} = req.body;
+        console.log({code, newPass, email})
+        let checkCode = await model.code.findOne({
+            where: {
+                code
+            }
+        })
+        if (!checkCode) {
+            return res.status(400).json({message: "code is wrong. Please typing correct code"})
+        }
+
+        let checkUser = await model.users.findOne({
+            where: {
+                email
+            }
+        })
+
+        if (!checkUser) {
+            return res.status.json({message: "Email is wrong."});
+        }
+
+        let hashNewPass = bcrypt.hashSync(newPass, 10)
+        checkUser.pass_word = hashNewPass;
+        checkUser.save();
+
+        await model.code.destroy({
+            where: {
+                id: checkCode.dataValues.id
+            }
+        })
+        return res.status(200).json({message: "Change password successfully"});
+    } catch(error) {
+        return res.status(500).json({message: "error"})
+    }
+
+}
+
+export {
+    register,
+    login,
+    loginFacebook,
+    extendToken,
+    loginAsyncKey,
+    verifyAccessTokenAsyncKey,
+    forgetCheckEmail,
+    changePass
+};

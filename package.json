@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "cd src && mocha --timeout 5000 'test/**/*.test.js'",
     "start": "nodemon index.js"
   },
   "repository": {
@@ -20,15 +20,19 @@
   "homepage": "https://github.com/DuyPhuongkhtn/DuyPhuongNode44#readme",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "chai": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
+    "mocha": "^10.7.3",
     "mysql2": "^3.11.2",
     "nodemailer": "^6.9.15",
     "nodemon": "^3.1.4",
     "sequelize": "^6.37.3",
-    "sequelize-auto": "^0.8.8"
+    "sequelize-auto": "^0.8.8",
+    "sinon": "^19.0.2"
   }
 }
