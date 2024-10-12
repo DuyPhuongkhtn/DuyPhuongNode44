@@ -4,6 +4,7 @@ import pool from './db.js';
 import { OK, INTERNAL_SERVER } from './const.js';
 import rootRoutes from './src/routes/root.router.js';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 // B2: tạo object express
 const app = express();
@@ -12,7 +13,13 @@ const app = express();
 app.use(express.json());
 
 // thêm middleware cors để FE có thể call API tới BE
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true
+}));
+
+// thêm middleware để get infor cookie
+app.use(cookieParser());
 
 // import rootRoutes
 app.use(rootRoutes);
