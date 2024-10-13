@@ -21,7 +21,7 @@ export const createToken = (data) => {
 export const createTokenAsyncKey = (data) => {
     return jwt.sign({payload: data}, accessTokenPrivateKey, {
         algorithm: "RS256",
-        expiresIn: "10s"
+        expiresIn: "10m"
     })
 }
 
@@ -51,10 +51,12 @@ export const verifyToken = (token) => {
 
 export const verifyTokenAsyncKey = (token) => {
     try {
-        jwt.verify(token, accessTokenPublicKey);
-        return true;
+        let data = jwt.verify(token, accessTokenPublicKey, { algorithms: ['RS256']});
+        console.log("verifyTokenAsyncKey: ", data)
+        return data;
     } catch (error) {
         // không verify được token
+        console.log("error check token: ", error)
         return false;
     }
 }
@@ -73,9 +75,12 @@ export const middlewareToken = (req, res, next) => {
 
 export const middlewareTokenAsyncKey = (req, res, next) => {
     let {token} = req.headers;
+    console.log("token: ", token)
     let checkToken = verifyTokenAsyncKey(token);
+    console.log("get token:", checkToken)
     if (checkToken){
         // nếu token hợp lệ => pass => qua router
+        req.userId = checkToken.payload.userId;
         next();
     } else {
         return res.status(401).json({message: "Unauthorized"});
