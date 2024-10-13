@@ -42,6 +42,10 @@ export default class users extends Model {
     refresh_token: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    secret: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   }, {
     sequelize,

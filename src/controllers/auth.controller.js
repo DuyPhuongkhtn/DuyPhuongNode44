@@ -5,8 +5,13 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // lib để tạo random code cho flow forgot password
 import transporter from "../config/transporter.js";
 import { createRefToken, createRefTokenAsyncKey, createToken, createTokenAsyncKey, verifyTokenAsyncKey } from "../config/jwt.js";
+import {PrismaClient} from '@prisma/client';
+import speakeasy from 'speakeasy'; // lib tạo secret key
 
 const model = initModels(sequelize);
+
+const prisma = new PrismaClient();
+
 const register = async (req, res, next) => {
     try {
         /**
@@ -19,11 +24,17 @@ const register = async (req, res, next) => {
          *    - nếu tồn tại: trả lỗi "Tài khoản đã tồn tại"
          *    - nếu chưa tồn tại: đi tiêp
          */
-        const userExist = await model.users.findOne({
+        // const userExist = await model.users.findOne({
+        //     where: {
+        //         email: email,
+        //     },
+        // });
+        const userExist = await prisma.users.findFirst({
             where: {
-                email: email,
-            },
-        });
+                email
+            }
+        })
+
         console.log({ userExist });
         if (userExist) {
             return res.status(400).json({
@@ -37,11 +48,22 @@ const register = async (req, res, next) => {
         /**
          * Bước 3: thêm người dùng mới vào db
          */
-        const userNew = await model.users.create({
-            full_name: fullName,
-            email: email,
-            pass_word: bcrypt.hashSync(pass, 10),
-        });
+        // const userNew = await model.users.create({
+        //     full_name: fullName,
+        //     email: email,
+        //     pass_word: bcrypt.hashSync(pass, 10),
+        // });
+        // tạo secret cho login 2 lớp
+        const secret = speakeasy.generateSecret({length: 15});
+        console.log("secret: ", secret.base32)
+        const userNew = await prisma.users.create({
+            data: {
+                full_name: fullName,
+                email,
+                pass_word: bcrypt.hashSync(pass, 10),
+                secret: secret.base32
+            }
+        })
 
         //   cấu hình info email
         const mailOption = {
