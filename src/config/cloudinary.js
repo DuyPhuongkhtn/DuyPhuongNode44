@@ -32,6 +32,13 @@ const storage = new CloudinaryStorage({
         // Nếu không hợp lệ, trả về định dạng mặc định (ví dụ 'png')
         return 'png';
       },
+      transformation: [
+        {
+          width: 800,   // Giới hạn chiều rộng ảnh
+          quality: 'auto:good',  // Chất lượng tự động: tốt
+          fetch_format: 'auto',  // Tự động chọn định dạng tốt nhất (jpeg, webp, v.v.)
+        },
+      ],
     public_id: (req, file) => file.originalname.split('.')[0],  // Tên ảnh
   },
 });
