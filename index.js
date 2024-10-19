@@ -9,6 +9,8 @@ import cookieParser from 'cookie-parser';
 // B2: tạo object express
 const app = express();
 
+app.use(express.static(".")) // định vị load thư mục tài nguyên
+
 // thêm middleware cors để FE có thể call API tới BE
 app.use(cors({
     origin: "http://localhost:3000", // cấp quyền cho FE

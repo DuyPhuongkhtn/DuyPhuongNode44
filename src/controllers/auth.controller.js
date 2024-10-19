@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // lib để tạo random code cho flow forgot password
 import transporter from "../config/transporter.js";
 import { createRefToken, createRefTokenAsyncKey, createToken, createTokenAsyncKey, verifyTokenAsyncKey } from "../config/jwt.js";
-import {PrismaClient} from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import speakeasy from 'speakeasy'; // lib tạo secret key
 
 const model = initModels(sequelize);
@@ -54,7 +54,7 @@ const register = async (req, res, next) => {
         //     pass_word: bcrypt.hashSync(pass, 10),
         // });
         // tạo secret cho login 2 lớp
-        const secret = speakeasy.generateSecret({length: 15});
+        const secret = speakeasy.generateSecret({ length: 15 });
         console.log("secret: ", secret.base32)
         const userNew = await prisma.users.create({
             data: {
@@ -76,8 +76,8 @@ const register = async (req, res, next) => {
 
         //   gửi email
         transporter.sendMail(mailOption, (err, info) => {
-            if(err) {
-                return res.status(500).json({message: "Sending email error"});
+            if (err) {
+                return res.status(500).json({ message: "Sending email error" });
             }
             return res.status(200).json({
                 message: "Đăng ký thành công",
@@ -98,7 +98,7 @@ const login = async (req, res) => {
         //   B2.2: nếu có user => check tiếp pass_word
         //      B2.2.1: nếu password ko trùng nhau => ra error password is wrong
         //      B2.2.2: nếu password trùng nhau => tạo access token
-        let { email, pass_word } = req.body;
+        let { email, pass_word, code } = req.body;
 
         let user = await model.users.findOne({
             where: {
@@ -113,6 +113,18 @@ const login = async (req, res) => {
         if (!checkPass) {
             return res.status(400).json({ message: "Password is wrong" });
         }
+
+        // Kiểm tra mã OTP từ người dùng
+        const verified = speakeasy.totp.verify({
+            secret: user.secret.base32,
+            encoding: 'base32',
+            code
+        });
+
+        if (!verified) {
+            return res.status(400).json({ message: 'Invalid 2FA token' });
+        }
+
         let payload = {
             userId: user.user_id
         }
@@ -122,13 +134,13 @@ const login = async (req, res) => {
         // param 1: tạo payload và lưu vào token
         // param 2: key để tạo token
         // param 3: setting lifetime của token và thuật toán để tạo token
-        let accessToken = createToken({userId: user.user_id})
+        let accessToken = createToken({ userId: user.user_id })
         // create refresh token và lưu vào database
-        let refreshToken = createRefToken({userId: user.user_id});
+        let refreshToken = createRefToken({ userId: user.user_id });
         await model.users.update({
             refresh_token: refreshToken
         }, {
-            where: {user_id: user.user_id}
+            where: { user_id: user.user_id }
         });
 
         // lưu refresh token vào cookie
@@ -167,7 +179,7 @@ const loginFacebook = async (req, res) => {
             }
             user = await model.users.create(newUser);
         }
-        let accessToken = createToken({userId: user.user_id})
+        let accessToken = createToken({ userId: user.user_id })
         return res.status(200).json({
             message: "Login successfully",
             data: accessToken
@@ -198,8 +210,8 @@ const extendToken = async (req, res) => {
 
     // const newToken = createToken({userId: checkRefToken.user_id})
     // tạo access token mới
-    const newToken = createTokenAsyncKey({userId: checkRefToken.user_id})
-    return res.status(200).json({message: "Success", data: newToken});
+    const newToken = createTokenAsyncKey({ userId: checkRefToken.user_id })
+    return res.status(200).json({ message: "Success", data: newToken });
 }
 
 const loginAsyncKey = async (req, res) => {
@@ -210,7 +222,7 @@ const loginAsyncKey = async (req, res) => {
         //   B2.2: nếu có user => check tiếp pass_word
         //      B2.2.1: nếu password ko trùng nhau => ra error password is wrong
         //      B2.2.2: nếu password trùng nhau => tạo access token
-        let { email, pass_word } = req.body;
+        let { email, pass_word, code } = req.body;
 
         let user = await model.users.findOne({
             where: {
@@ -225,6 +237,18 @@ const loginAsyncKey = async (req, res) => {
         if (!checkPass) {
             return res.status(400).json({ message: "Password is wrong" });
         }
+
+        // Kiểm tra mã OTP từ người dùng
+        const verified = speakeasy.totp.verify({
+            secret: user.secret,
+            encoding: 'base32',
+            token: code
+        });
+
+        if (!verified) {
+            return res.status(400).json({ message: 'Invalid 2FA token' });
+        }
+
         let payload = {
             userId: user.user_id
         }
@@ -234,13 +258,13 @@ const loginAsyncKey = async (req, res) => {
         // param 1: tạo payload và lưu vào token
         // param 2: key để tạo token
         // param 3: setting lifetime của token và thuật toán để tạo token
-        let accessToken = createTokenAsyncKey({userId: user.user_id})
+        let accessToken = createTokenAsyncKey({ userId: user.user_id })
         // create refresh token và lưu vào database
-        let refreshToken = createRefTokenAsyncKey({userId: user.user_id});
+        let refreshToken = createRefTokenAsyncKey({ userId: user.user_id });
         await model.users.update({
             refresh_token: refreshToken
         }, {
-            where: {user_id: user.user_id}
+            where: { user_id: user.user_id }
         });
 
         // lưu refresh token vào cookie
@@ -262,16 +286,16 @@ const loginAsyncKey = async (req, res) => {
 }
 
 const verifyAccessTokenAsyncKey = (req, res) => {
-    let {token} = req.headers;
+    let { token } = req.headers;
     let checkToken = verifyTokenAsyncKey(token)
-    return res.status(200).json({checkToken});
+    return res.status(200).json({ checkToken });
 }
 
 const forgotPass = async (req, res) => {
-    try{
+    try {
         // get email from body
         console.log("forgot password")
-        let {email} = req.body;
+        let { email } = req.body;
         console.log("email:", email)
 
         // kiểm tra email có tồn tại trong database
@@ -282,7 +306,7 @@ const forgotPass = async (req, res) => {
         });
 
         if (!checkEmail) {
-            return res.status(400).json({message: "Email is wrong"});
+            return res.status(400).json({ message: "Email is wrong" });
         }
 
         // tạo code
@@ -308,22 +332,22 @@ const forgotPass = async (req, res) => {
 
         //   gửi email
         transporter.sendMail(mailOption, (err, info) => {
-            if(err) {
+            if (err) {
                 console.log(err)
-                return res.status(500).json({message: "Sending email error"});
+                return res.status(500).json({ message: "Sending email error" });
             }
             return res.status(200).json({
                 message: "Please check your email."
             });
         })
     } catch (error) {
-        return res.status(500).json({message: "error API forgot password"});
+        return res.status(500).json({ message: "error API forgot password" });
     }
 }
 
 const changePassword = async (req, res) => {
     try {
-        let {code, email, newPass} = req.body;
+        let { code, email, newPass } = req.body;
         // kiểm tra code có tồn tại trong db hay không
         let checkCode = await model.code.findOne({
             where: {
@@ -331,18 +355,18 @@ const changePassword = async (req, res) => {
             }
         })
         if (!checkCode) {
-            return res.status(400).json({message: "Code is wrong"});
+            return res.status(400).json({ message: "Code is wrong" });
         }
 
         // check code có còn expire hay ko
 
         // kieểm tra email có tồn tại trong db hay không
         let checkEmail = await model.users.findOne({
-            where: {email}
+            where: { email }
         });
 
         if (!checkEmail) {
-            return res.status(400).json({message: "Email is wrong"});
+            return res.status(400).json({ message: "Email is wrong" });
         }
 
         let hashNewPass = bcrypt.hashSync(newPass, 10);
@@ -351,13 +375,13 @@ const changePassword = async (req, res) => {
 
         // remove code sau khi change password thành công
         await model.code.destroy({
-            where: {code}
+            where: { code }
         })
 
-        return res.status(200).json({message: "Change password successfully"});
+        return res.status(200).json({ message: "Change password successfully" });
 
     } catch (error) {
-        return res.status(500).json({message: "error API change password"});
+        return res.status(500).json({ message: "error API change password" });
     }
 }
 
