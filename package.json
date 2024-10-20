@@ -40,6 +40,7 @@
     "sequelize": "^6.37.3",
     "sequelize-auto": "^0.8.8",
     "sinon": "^19.0.2",
+    "socket.io": "^4.8.0",
     "speakeasy": "^2.0.0"
   }
 }
