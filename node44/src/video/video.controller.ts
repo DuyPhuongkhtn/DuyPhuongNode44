@@ -1,27 +1,39 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Header, Res, HttpStatus, Req, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Header, Res, HttpStatus, Req, Headers, UseGuards } from '@nestjs/common';
 import { VideoService } from './video.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { Request, Response } from 'express';
 import { VideoDto } from './dto/video.dto';
+import { ApiBearerAuth, ApiHeader, ApiHeaders, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {AuthGuard} from '@nestjs/passport'
 
+@ApiTags('Video') // chia cụm API
 @Controller('video') //http://localhost:8080/video/
 export class VideoController {
   constructor(private readonly videoService: VideoService) { }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post("/create-video")
-  create(
+  async create(
     @Body() createVideoDto: CreateVideoDto,
     @Res() res: Response
-  ) {
-    return res.status(HttpStatus.CREATED).json(createVideoDto);
-    // return this.videoService.create(createVideoDto);
+  ): Promise<Response<VideoDto>> {
+    // return res.status(HttpStatus.CREATED).json(createVideoDto);
+    let newVideo = await this.videoService.create(createVideoDto);
+    return res.status(HttpStatus.CREATED).json(newVideo);
   }
 
   @Get("/get-videos")
+  @ApiQuery({name: "page", required: false, type: Number})
+  @ApiQuery({name: "size", required: false, type: Number})
+  @ApiQuery({name: "keyword", required: false, type: String})
+  @ApiHeader({name: "token", required: false })
+  @ApiResponse({status: HttpStatus.OK, description: "Get list videos successfully"})
+  @ApiResponse({status: HttpStatus.INTERNAL_SERVER_ERROR, description: "Internal server"})
   async findAll(
-    @Query('page') page: string,
-    @Query('size') size: string,
+    @Query('page') page: number,
+    @Query('size') size: number,
     @Query('keyword') keyword: string,
     @Res() res: Response,
     @Headers("token") token: string

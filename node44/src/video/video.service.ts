@@ -9,8 +9,15 @@ import { plainToClass } from 'class-transformer';
 export class VideoService {
   prisma = new PrismaClient();
 
-  create(createVideoDto: CreateVideoDto) {
-    return 'This action adds a new video';
+  async create(createVideoDto: CreateVideoDto): Promise<VideoDto> {
+    try {
+      let newVideo = await this.prisma.video.create({
+        data: createVideoDto
+      })
+      return plainToClass(VideoDto, newVideo);
+    } catch (error) {
+      throw new Error(error);
+    }
   }
 
   async findAll(page: number, size: number, keyword: string): Promise<VideoDto[]> {
