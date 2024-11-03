@@ -3,14 +3,18 @@ import { PrismaClient } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
 import {JwtService} from '@nestjs/jwt';
 import {ConfigService} from '@nestjs/config';
+import { KeyService } from 'src/key/key.service';
 
 @Injectable()
 export class AuthService {
     prisma = new PrismaClient();
     constructor(
         private jwtService: JwtService,
-        private configService: ConfigService
-    ){}
+        private configService: ConfigService,
+        private keyService: KeyService
+    ){
+
+    }
 
     async login(body: LoginDto): Promise<string> {
         try {
@@ -30,7 +34,8 @@ export class AuthService {
                 {data: {userId: checkUser.user_id}},
                 {
                     expiresIn: "30m",
-                    secret: this.configService.get("SECRET_KEY")
+                    privateKey: this.keyService.getPrivateKey(),
+                    algorithm: 'RS256'
                 }
             )
             return token;
