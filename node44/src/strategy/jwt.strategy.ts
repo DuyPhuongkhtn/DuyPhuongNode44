@@ -37,6 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         keyService: KeyService
     ) {
         const publicKey = keyService.getPublicKey();
+        console.log(publicKey)
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,

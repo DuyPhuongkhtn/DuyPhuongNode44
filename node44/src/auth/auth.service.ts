@@ -34,6 +34,7 @@ export class AuthService {
                 {data: {userId: checkUser.user_id}},
                 {
                     expiresIn: "30m",
+                    // secret: this.configService.get<string>('SECRET_KEY')
                     privateKey: this.keyService.getPrivateKey(),
                     algorithm: 'RS256'
                 }
