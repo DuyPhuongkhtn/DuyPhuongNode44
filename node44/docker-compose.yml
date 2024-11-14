@@ -1,0 +1,29 @@
+version: '3'
+volumes:
+  mysql_db:
+    driver: local
+networks:
+  node44:
+services:
+  mysql_db:
+    image: mysql # pull image mysql từ docker hub
+    container_name: mysql_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    ports:
+      - 3308:3306
+    volumes:
+      - mysql_db:/var/lib/mysql
+    networks:
+      - node44
+  app-node44:
+    depends_on:
+      - mysql_db
+    build: . #docker sẽ tìm Dockerfile trong source để build image
+    container_name: app-node44
+    ports:
+      - 8080:8080
+    env_file:
+      - .env
+    networks:
+      - node44
